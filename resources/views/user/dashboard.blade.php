@@ -1,6 +1,6 @@
 @extends('layouts.app') {{-- Pastikan ini ada di paling atas untuk mewarisi layout --}}
 
-@section('title', $movie->title) {{-- Mengatur judul halaman HTML --}}
+@section('title', $movie-> title) {{-- Mengatur judul halaman HTML --}}
 
 @section('content') {{-- Semua konten halaman harus berada di dalam section ini --}}
     <div class="container mx-auto px-4 py-8 text-white">
