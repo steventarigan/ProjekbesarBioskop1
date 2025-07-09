@@ -1,68 +1,47 @@
-@extends('layouts.app') {{-- Pastikan ini ada di paling atas untuk mewarisi layout --}}
+@extends('layouts.app') {{-- Menggunakan layout utama untuk pengguna --}}
 
-@section('title', $movie-> title) {{-- Mengatur judul halaman HTML --}}
+@section('title', 'Dashboard Pengguna') {{-- Mengatur judul halaman HTML --}}
 
-@section('content') {{-- Semua konten halaman harus berada di dalam section ini --}}
+@section('content')
     <div class="container mx-auto px-4 py-8 text-white">
-        <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden p-8 flex flex-col md:flex-row items-start md:space-x-8">
-            <!-- Movie Poster -->
-            <div class="flex-shrink-0 w-full md:w-1/3 mb-6 md:mb-0">
-                {{-- Menampilkan poster film. Jika poster_url kosong, gunakan placeholder --}}
-                <img src="{{ $movie->poster_url ?: 'https://via.placeholder.com/400x600.png?text=No+Poster' }}"
-                     alt="{{ $movie->title }} Poster" class="w-full h-auto rounded-lg shadow-xl object-cover">
+        <h1 class="text-4xl font-bold mb-6 text-center">Selamat Datang, {{ Auth::user()->name }}!</h1>
+
+        {{-- Menampilkan pesan sukses atau error dari sesi --}}
+        @if (session('success'))
+            <div class="bg-green-600 text-white p-3 rounded mb-4 max-w-xl mx-auto">
+                {{ session('success') }}
+            </div>
+        @endif
+        @if (session('error'))
+            <div class="bg-red-600 text-white p-3 rounded mb-4 max-w-xl mx-auto">
+                {{ session('error') }}
+            </div>
+        @endif
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+            {{-- Card untuk Riwayat Pemesanan --}}
+            <div class="bg-gray-800 p-6 rounded-lg shadow-lg flex flex-col items-center text-center">
+                <svg class="w-16 h-16 text-red-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                <h3 class="text-2xl font-semibold text-red-500 mb-3">Riwayat Pemesanan</h3>
+                <p class="text-gray-300 mb-4">Lihat semua tiket yang pernah Anda pesan.</p>
+                <a href="{{ route('booking.user_bookings') }}" class="mt-auto inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg text-lg">Lihat</a>
             </div>
 
-            <!-- Movie Details -->
-            <div class="flex-1">
-                <h1 class="text-5xl font-bold text-red-500 mb-4">{{ $movie->title }}</h1>
-                <p class="text-gray-300 text-lg mb-2">Genre: <span class="font-semibold">{{ $movie->genre }}</span></p>
-                <p class="text-gray-300 text-lg mb-2">Durasi: <span class="font-semibold">{{ $movie->duration }} menit</p>
-                {{-- Memformat tanggal rilis menggunakan Carbon untuk tampilan yang lebih baik --}}
-                <p class="text-gray-300 text-lg mb-4">Tanggal Rilis: <span class="font-semibold">{{ \Carbon\Carbon::parse($movie->release_date)->format('d F Y') }}</span></p>
-
-                <h2 class="text-3xl font-semibold text-white mb-3 mt-6">Sinopsis</h2>
-                <p class="text-gray-400 text-base leading-relaxed mb-6">{{ $movie->description }}</p>
-
-                @if ($movie->trailer_url)
-                    <h2 class="text-3xl font-semibold text-white mb-3">Trailer</h2>
-                    <div class="relative overflow-hidden w-full rounded-lg" style="padding-top: 56.25%;">
-                        {{-- Menyematkan trailer YouTube. Mengambil ID video dari URL --}}
-                        <iframe class="absolute top-0 left-0 w-full h-full"
-                                src="https://www.youtube.com/embed/{{ Str::afterLast($movie->trailer_url, '/') }}"
-                                frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowfullscreen></iframe>
-                    </div>
-                @endif
-
-                {{-- Bagian Jadwal Tayang --}}
-                <div class="mt-8">
-                    <h2 class="text-3xl font-semibold mb-4">Jadwal Tayang</h2>
-                    @if ($showtimes->isEmpty())
-                        <p class="text-gray-400">Belum ada jadwal tayang untuk film ini.</p>
-                    @else
-                        {{-- Mengelompokkan jadwal tayang berdasarkan tanggal --}}
-                        @foreach ($showtimes as $date => $dailyShowtimes)
-                            <h3 class="text-2xl font-semibold mt-6 mb-3">{{ \Carbon\Carbon::parse($date)->locale('id')->isoFormat('dddd, D MMMM Y') }}</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                @foreach ($dailyShowtimes as $showtime)
-                                    <div class="bg-gray-700 p-4 rounded-lg shadow-md">
-                                        <p class="text-xl font-bold">{{ $showtime->start_time->format('H:i') }} - {{ $showtime->end_time->format('H:i') }}</p>
-                                        <p class="text-gray-300">Studio: {{ $showtime->cinemaHall->name }}</p>
-                                        <p class="text-gray-300">Harga: Rp {{ number_format($showtime->ticket_price, 0, ',', '.') }}</p>
-                                        {{-- Tautan ke halaman pemilihan kursi untuk jadwal tayang ini --}}
-                                        <a href="{{ route('booking.select_seats', $showtime->id) }}" class="mt-3 inline-block bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Pesan Tiket</a>
-                                    </div>
-                                @endforeach
-                            </div>
-                        @endforeach
-                    @endif
-                </div>
+            {{-- Card untuk Edit Profil --}}
+            <div class="bg-gray-800 p-6 rounded-lg shadow-lg flex flex-col items-center text-center">
+                <svg class="w-16 h-16 text-red-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0H9m7 6l-3 3m0 0l-3-3m3 3V9"></path></svg>
+                <h3 class="text-2xl font-semibold text-red-500 mb-3">Edit Profil</h3>
+                <p class="text-gray-300 mb-4">Perbarui informasi akun Anda.</p>
+                <a href="{{ route('user.profile.edit') }}" class="mt-auto inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg text-lg">Edit</a>
             </div>
-        </div>
 
-        {{-- Kembali ke daftar film --}}
-        <div class="mt-8 text-center">
-            <a href="{{ route('movies.list') }}" class="text-red-500 hover:text-red-400 text-lg font-semibold">&larr; Kembali ke Daftar Film</a>
+            {{-- Card untuk Menjelajahi Film --}}
+            <div class="bg-gray-800 p-6 rounded-lg shadow-lg flex flex-col items-center text-center">
+                <svg class="w-16 h-16 text-red-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                <h3 class="text-2xl font-semibold text-red-500 mb-3">Jelajahi Film</h3>
+                <p class="text-gray-300 mb-4">Temukan film terbaru dan jadwal tayangnya.</p>
+                <a href="{{ route('movies.list') }}" class="mt-auto inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg text-lg">Jelajahi</a>
+            </div>
         </div>
     </div>
 @endsection
